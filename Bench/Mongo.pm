@@ -4,21 +4,27 @@ extends 'Bench';
 
 use MongoDB;
 
+has '+db' => (
+    isa        => 'MongoDB::Database',
+    is         => 'ro',
+    required   => 1,
+    lazy_build => 1
+);
+
 has safe_insert => (
     isa     => 'Bool',
     is      => 'ro',
     default => 0
 );
 
-has '+db' => (
-    isa     => 'MongoDB::Database',
+has native_id => (
+    isa     => 'Bool',
     is      => 'ro',
-    required => 1,
-    lazy_build => 1
+    default => 0
 );
 
 sub _build_db {
-    my $self = shift;
+    my $self     = shift;
     my $database = $self->database;
     return MongoDB::Connection->new()->$database;
 }
@@ -29,20 +35,21 @@ sub init {
     $self->db->Posts->ensure_index( { account_id => 1 } );
 }
 
-sub add_account { 
-    my ($self, $name) = @_;
-    return $self->db->Accounts->insert(
-        { name => $name },
-        { safe => $self->safe_insert } 
-    );
+sub add_account {
+    my ( $self, $name, $i ) = @_;
+    my $rec = { name => $name };
+    $rec->{_id} = $i unless $self->native_id;
+    return $self->db->Accounts->insert( $rec, { safe => $self->safe_insert } );
 }
 
 sub add_post {
-    my ( $self, $account_id ) = @_;
-    return $self->db->Posts->insert(
-        { account_id => $account_id, text => "A" x $self->text_length },
-        { safe => $self->safe_insert } 
-    );
+    my ( $self, $account_id, $i ) = @_;
+    my $rec = {
+        account_id => $account_id,
+        text       => "A" x $self->text_length
+    };
+    $rec->{_id} = $i unless $self->native_id;
+    return $self->db->Posts->insert( $rec, { safe => $self->safe_insert } );
 }
 
 sub get_ids { 

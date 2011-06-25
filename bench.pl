@@ -17,6 +17,8 @@ my $update  = 0;
 my $runs    = 10;
 my $verbose = 1;
 
+my %local = ();
+
 GetOptions(
     "database=s" => \$database,
     "accounts=i" => \$accounts,
@@ -27,8 +29,11 @@ GetOptions(
     "create"     => \$create,
     "update"     => \$update,
     "readonly"   => sub { $create = 0 },
-    "runs=i"     => \$runs
+    "runs=i"     => \$runs,
+    "local=s"    => \%local
 );
+
+$| = $verbose;
 
 my $module = $ARGV[0];
 if ( !defined $module ) {
@@ -43,7 +48,9 @@ my %args = (
     accounts    => $accounts,
     posts       => $posts,
     text_length => $text_length,
-    update      => $update
+    update      => $update,
+    verbose     => $verbose,
+    %local
 );
 
 my $bench = eval "Bench::$module->new(\%args);";
@@ -75,6 +82,7 @@ bench.pl - database benchmark utility
                     [--posts=<number>] [--textlen=<number>]
                     [--runs=<number>] [--verbose | --quiet]
                     [--create | --readonly] [--update]
+                    [--local <name=value>]
 
 
 =head1 DESCRIPTION
@@ -124,11 +132,36 @@ This introduces a new test that updates all posts while reading them.
 
 =head2 --verose
 
-Display minimal information
+Display information and a counter of created accounts and posts
 
 =head2 --quiet
 
 Do not display any information
+
+=head2 --local=<name=value>
+
+Add parameters local to the database driver tested.
+
+=head3 Mongo
+
+=head4 --safe_insert=<1|0>
+
+Use safe_insert. Default is 0.
+
+=head4 --native_id=<1|0>
+
+Use the MongoDB native _id generation or simple integer. Default 0,
+i.e. _id is a simple integer.
+
+=head3 MySQL
+
+=head4 --db_user=<username>
+
+Username for the connection. Default is 'test'.
+
+=head4 --db_pass=<password>
+
+Password for the connection. Default is 'test'.
 
 =head1 PREREQUISITS
 
